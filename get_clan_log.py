@@ -1,12 +1,16 @@
 #!/usr/bin/python
 # Author: chook_on_a_stick asia server
 # Intitial Draft21 Nov 2020
-# A script to pull the event (Personal Reward Campaign) data for all the players in a clan
+# A script to pull the a clan's event log
 # Usage:
-# get_players_event_info.py <clan_id> <event_id> <front_ud>
-# E.g. get_players_event_info.py 2000010912  metal_wars metal_wars_bg
-
-
+# get_clan_log.py <clan_id> <log_type> <page_size>
+# E.g. get_players_event_info.py 2000010912  all 50000
+# Valid known log types are:
+# all
+# forces
+# battles
+# provinces
+# events
 
 # This is how you pull account GM battles spa_id is the account id
 # https://worldoftanks.asia/wotup/profile/summary/?spa_id=2020855642&battle_type=globalmap
@@ -67,9 +71,11 @@ print "asia_clan_log_url: " + asia_clan_log_url
 clan_log_res = requests.get(asia_clan_log_url)
 d = json.loads(clan_log_res.text)
 
+event_meta_data = d['meta']
 event_data = d['data']
 
 pp = pprint.PrettyPrinter()
-
-pp.pprint(event_data)
+print event_data
+#pp.pprint(event_data)
+#pp.pprint(event_meta_data)
 
