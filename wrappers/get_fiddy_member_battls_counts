@@ -1,0 +1,5 @@
+#!/bin/sh
+
+/Users/jtan/repos/wot/get_clans_player_battle_count.py 2000004634
+
+
