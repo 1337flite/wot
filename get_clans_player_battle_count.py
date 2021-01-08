@@ -20,6 +20,7 @@ import requests
 import sys
 import json
 import math
+import pprint
 
 # Returns the number of battles of "battle_type" for the account "account_id"
 # Valid battle_types are:
@@ -54,14 +55,19 @@ region_api_server="https://api.worldoftanks.asia"
 # EU https://api.worldoftanks.eu
 
 #Get clan list of members
-clan_details_url= region_api_server + "/wot/clans/info/?application_id=" + application_id + "&clan_id=" + str(clan_id)  + "&fields=members"
+clan_details_url= region_api_server + "/wot/clans/info/?application_id=" + application_id + "&clan_id=" + str(clan_id)  + "&fields=members,tag"
 
 clan_details_res = requests.get(clan_details_url)
-print clan_details_res
+#print clan_details_res
 d = json.loads(clan_details_res.text)
+
+#pp.pprint(d)
+#pp = pprint.PrettyPrinter()
+
+clan_tag = d['data'][clan_id]['tag']
 member_list = d['data'][clan_id]['members']
 member_list_len = len(member_list)
-
+print "#" + clan_tag
 print "member,account_id,randoms,globalmap,advances,skirms"
 for m in member_list:
   member_name = m['account_name']
