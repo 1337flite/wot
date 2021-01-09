@@ -16,6 +16,11 @@
 # EXXCEPT PLAYERS WITH NO GM BATTLES they return something like this:
 # {"status": "ok", "data": {"global_rating": null, "wins_ratio": null, "xp_per_battle_average": null, "hits_ratio": null, "damage_per_battle_average": null, "mastery": {"vehicles_count": 146, "mastery_count": 20}}}
 # landing_types: 'null' 'tournament' 'tournament'
+
+
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+#import gspread.exceptions.GSpreadException
 import requests
 import sys
 import json
@@ -23,6 +28,12 @@ import math
 import pprint
 import gspread
 import datetime
+import time
+
+SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+#COOKIES = dict(wgcwx_session_key='b96ebfbf0d235de9bb0a44724d44b6c7')
+#COOKIES = dict(wgcwx_session_key='1RKzR1D1YfrEgFVazUAnxL_wVxRIbgZvtPrx2SpeZRu4')
+
 
 now =  datetime.datetime.now()
 #now =  datetime.datetime(2021,01,10)
@@ -43,14 +54,6 @@ client = gspread.authorize(creds)
 #sheet_url2 =  "https://docs.google.com/spreadsheets/d/1q7OLH8qK0KAgWA882nZ7UOtm0vGM7Q8RL41xxWLFcYo/"
 #sheet_key="1q7OLH8qK0KAgWA882nZ7UOtm0vGM7Q8RL41xxWLFcYo"
 
-sheet1 = client.open('Provinces Test')
-tab = sheet1.worksheet('provinces')
-#tab.update_cell(1,1,'hello')
-
-batch = [{'range':'A1:F4','values':[[1,2,3,4,'FALSE','FALSE']] }]
-tab.batch_update(batch)
-
-#sheet1.add_worksheet('new sheet',100,100,0)
 
 
 pp = pprint.PrettyPrinter()
@@ -123,6 +126,10 @@ j715 = []
 jumps = [ j1,j115,j2,j215,j3,j315,j4,j415,j5,j515,j6,j615,j7,j715]
 
 
+
+def jumpToDict(theJump):
+  return { theJump['province_id'], theJump['arena_id'], theJump['max_bets'], theJump['current_min_bet'], theJump['last_won_bet'], theJump['landing_type'], theJump['battles_start_at'], theJump['the_date'], theJump['the_time'] }
+
 def getJumpFromTime(time):
   if time == '08:00:00':
     return 'J1'
@@ -157,7 +164,10 @@ def getJumpFromTime(time):
 
 jumps_by_time ={ '08:00:00':j1, '08:15:00':j115, '09:00:00':j2, '09:15:00':j215, '10:00:00':j3, '10:15:00':j315, '11:00:00':j4, '11:15:00':j415, '12:00:00':j5, '12:15:00':j515, '13:00:00':j6, '13:15:00':j615, '14:00:00':j7, '14:15:00':j715 } 
 
-print "#province,map,max_bets,current_min_bet,last_won_bet,landing_type,battles_start_at"
+header_str = "#jump,province,map,max_bets,current_min_bet,last_won_bet,landing_type,battles_start_at,date,time,chip,bid"
+header_dict = {'#jump','province','map','max_bets','current_min_bet','last_won_bet','landing_type','battles_start_at','date','time','chip','bid"'}
+
+print header_str
 for province in province_data:
   active_battles = province['active_battles']
   status = province['status']
@@ -192,7 +202,7 @@ for province in province_data:
   the_time = time_date[1]
   the_jump = getJumpFromTime(the_time)
   # D has 11 fields  cols A-K
-  d = {'province_id':province_id,'arena_id':arena_id,'max_bets':max_bets,'current_min_bet':current_min_bet,'last_won_bet':last_won_bet,'landing_type':landing_type,'battles_start_at':battles_start_at,'the_date':the_date,'the_time':the_time,'the_jump':the_jump}
+  d = {'the_jump':the_jump,'province_id':province_id,'arena_id':arena_id,'max_bets':max_bets,'current_min_bet':current_min_bet,'last_won_bet':last_won_bet,'landing_type':landing_type,'battles_start_at':battles_start_at,'the_date':the_date,'the_time':the_time}
   #print "the jump time is: " + the_time 
   jumps_by_time[the_time].append(d)
   #pp.pprint(jumps_by_time[the_time])
@@ -236,74 +246,109 @@ for province in province_data:
 #  print jump['battles_start_at']
 #  print jump['the_date']
 #  print jump['the_time']
+
+
+
+sheet1 = client.open('Provinces Test')
+template_tab = sheet1.worksheet('Template')
+#today_tab = sheet1.add_worksheet(today_str,200,200,0)
+hello_str = "hello today's date is " + today_str
+#today_tab.update_cell(1,1,hello_str)
+#tab  = sheet1.worksheet('new sheet1')
+#sheet1.del_worksheet(today_str)
+
+try:
+  today_tab = sheet1.worksheet(today_str)
+  sheet1.del_worksheet(today_tab) 
+except gspread.WorksheetNotFound:
+  print "worksheet "+ today_str + " does not exist, so can't delete"
+
+today_tab = template_tab.duplicate(0,int(day_str),today_str)
+today_tab.update_cell(1,1,"")
+
+batch = [{'range':'A:L','values':[[1,2,3,4,'FALSE','FALSE']] }]
+today_tab.batch_update(batch)
+range=1
+
+print header_str
 #for j in j1:
 print "#J1"
-print "#province,map,max_bets,current_min_bet,last_won_bet,landing_type,datetime,date,time,jump"
 for jump in jumps_by_time['08:00:00']:
 #  pp.pprint(jump)
-  print jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time'] + "," + jump['the_jump']
+  print  jump['the_jump'] + "," + jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time']
+  d = jumpToDict(jump)
+  pp.pprint(d)
 
+exit(0)
 print "J1+15"
 for jump in jumps_by_time['08:15:00']:
+  print  jump['the_jump'] + "," + jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time']
 #  pp.pprint(jump)
-  print jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time'] + "," + jump['the_jump']
  
 print "J2"
 for jump in jumps_by_time['09:00:00']:
+  print  jump['the_jump'] + "," + jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time']
   #pp.pprint(jump)
-  print jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time'] + "," + jump['the_jump']
 print "J2+15"
 for jump in jumps_by_time['09:15:00']:
+  print  jump['the_jump'] + "," + jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time']
   #pp.pprint(jump)
-  print jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time'] + "," + jump['the_jump']
 print "J3"
 for jump in jumps_by_time['10:00:00']:
+  print  jump['the_jump'] + "," + jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time']
   #pp.pprint(jump)
-  print jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time'] + "," + jump['the_jump']
 print "J3+15"
 for jump in jumps_by_time['10:15:00']:
+  print  jump['the_jump'] + "," + jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time']
   #pp.pprint(jump)
-  print jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time'] + "," + jump['the_jump']
 
 print "J4"
 for jump in jumps_by_time['11:00:00']:
+  print  jump['the_jump'] + "," + jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time']
   #pp.pprint(jump)
-  print jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time'] + "," + jump['the_jump']
 print "J4+15"
 for jump in jumps_by_time['11:15:00']:
+  print  jump['the_jump'] + "," + jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time']
   #pp.pprint(jump)
-  print jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time'] + "," + jump['the_jump']
 
 print "J5"
 for jump in jumps_by_time['12:00:00']:
+  print  jump['the_jump'] + "," + jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time']
   #pp.pprint(jump)
-  print jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time'] + "," + jump['the_jump']
 print "J5+15"
 for jump in jumps_by_time['12:15:00']:
+  print  jump['the_jump'] + "," + jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time']
   #pp.pprint(jump)
-  print jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time'] + "," + jump['the_jump']
 
 print "J6"
 for jump in jumps_by_time['13:00:00']:
+  print  jump['the_jump'] + "," + jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time']
   #pp.pprint(jump)
-  print jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time'] + "," + jump['the_jump']
 print "J6+15"
 for jump in jumps_by_time['13:15:00']:
+  print  jump['the_jump'] + "," + jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time']
   #pp.pprint(jump)
-  print jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time'] + "," + jump['the_jump']
 
 print "J7"
 for jump in jumps_by_time['14:00:00']:
+  print  jump['the_jump'] + "," + jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time']
   #pp.pprint(jump)
-  print jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time'] + "," + jump['the_jump']
+
 print "J7+15"
 for jump in jumps_by_time['14:15:00']:
+  print  jump['the_jump'] + "," + jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time']
   #pp.pprint(jump)
-  print jump['province_id']+ "," + jump['arena_id']+ "," + str(jump['max_bets']) + "," + str(jump['current_min_bet'])+ "," + str(jump['last_won_bet']) + "," + str(jump['landing_type']) + "," + jump['battles_start_at'] + "," + jump['the_date'] + "," + jump['the_time'] + "," + jump['the_jump']
 
 #  print  province_id + "," + arena_id + "," + str(max_bets) + "," + str(current_min_bet) + "," + str(last_won_bet) + "," + str(landing_type) + "," + battles_start_at + "," + the_date + "," + the_time
 #  print "province: " + province_id + ",map: " + arena_id + ",max_bets: " + str(max_bets) + ",current_min_bet: " + str(current_min_bet) + ",last_won_bet: " + str(last_won_bet) + ",landing_type: " + str(landing_type) + ",battles_start_at: " + battles_start_at
 #  print "\n\n\n"
+
+
+all_sheets = sheet1.worksheets()
+
+pp.pprint(all_sheets)
+
+
 
 
 #print "\n----\nJ1"
@@ -326,6 +371,9 @@ for jump in jumps_by_time['14:15:00']:
 
 
 
+
+# Data Examples for convenient reference.
+
 # 08:00:00
 # 08:15:00
 # 09:00:00
@@ -340,6 +388,7 @@ for jump in jumps_by_time['14:15:00']:
 # 13:15:00
 # 14:00:00
 # 14:15:00
+
 
 #{u'active_battles': [],
 # u'arena_id': u'23_westfeld',
