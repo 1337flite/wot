@@ -7,7 +7,7 @@ from operator import itemgetter
 
 
 SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-COOKIES = dict(wgcwx_session_key='')
+COOKIES = #see keepass gaming folder
 creds = ServiceAccountCredentials.from_json_keyfile_name('client_secret.json', SCOPE)
 client = gspread.authorize(creds)
 
@@ -58,7 +58,8 @@ def prettyList(input, enemy=False):
     else:
         server = None
 
-    front = 'Basic' if input['front_id'] == "metal_wars_sg_league1" else 'Advanced'
+#    front = 'Basic' if input['front_id'] == "metal_wars_sg_league1" else 'Advanced'
+    front = 'Basic' if input['front_id'] == "thunderstorm_sg_league1" else 'Advanced'
     arena = input['arena_name']
 
     roundNo = input.get('round_number')
@@ -164,7 +165,7 @@ while(True):
             print("couldn't reach google API, trying again in 1m")
 
 
-    updateString = time.strftime('Last updated: %a %d/%m/%y at %H:%M:%S NZST', nzTime)
+    updateString = time.strftime('Last updated: %a %d/%m/%y at %H:%M:%S ACST', nzTime)
     try:
         sheet.update('A1',updateString)
         work.update('A1',updateString)
