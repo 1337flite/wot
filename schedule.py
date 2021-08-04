@@ -7,14 +7,25 @@ from operator import itemgetter
 
 
 SCOPE = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-COOKIES = #see keepass gaming folder
+COOKIES = dict(wgcwx_session_key='b96ebfbf0d235de9bb0a44724d44b6c7')
 creds = ServiceAccountCredentials.from_json_keyfile_name('client_secret.json', SCOPE)
 client = gspread.authorize(creds)
 
-funk = client.open('S15 Spreadsheet') 
-sheet = funk.worksheet("Battle Times")
+#funk = client.open('S15 Spreadsheet') 
+#funk = client.open('Battle Times') 
+#sheet = funk.worksheet("Battle Times")
+#monkey = client.open('Battle Times')
+#`work = monkey.worksheet("Battle Times")
+
+
+
+
+#funk = client.open('S15 Spreadsheet') 
+funk = client.open('Battle Times') 
+sheet = funk.worksheet("Battle")
 monkey = client.open('Battle Times')
 work = monkey.worksheet("Battle")
+
 pp = pprint.PrettyPrinter()
 previousJump = ''
 previousTicks = []
@@ -38,7 +49,7 @@ def getBase(arenaName, baseNo):
             'Murovanka': {1: 'North', 2: 'South'}, 'Overlord': {1: 'South', 2: 'North'}, 'Pilsen': {1: 'North', 2: 'South'},
             'Prokhorovka': {1: 'North', 2: 'South'}, 'Redshire': {1: 'South', 2: 'North'}, 'Ruinberg': {1: 'North', 2: 'South'},
             'Sand River': {1: 'East', 2: 'West'}, 'Serene Coast': {1: 'South', 2: 'North'}, 'Steppes': {1: 'South', 2: 'North'},
-            'Westfield': {1: 'West', 2: 'East'}}
+            'Westfield': {1: 'West', 2: 'East'} ,'Tundra': {1: 'South',2:'North'}}
 
     return "{}-{}".format(baseNo, baseDict[arenaName][baseNo])
 
@@ -58,7 +69,6 @@ def prettyList(input, enemy=False):
     else:
         server = None
 
-#    front = 'Basic' if input['front_id'] == "metal_wars_sg_league1" else 'Advanced'
     front = 'Basic' if input['front_id'] == "thunderstorm_sg_league1" else 'Advanced'
     arena = input['arena_name']
 
@@ -76,6 +86,8 @@ def prettyList(input, enemy=False):
         arena = 'fishermans_bay'
     elif arena == "Sand River":
         arena = 'sand_river'
+    #elif arena == 'Tundra':
+    #    arena = '63_tundra'
     provinceMap = '=HYPERLINK("https://karellodewijk.github.io/maps/{}.jpg","{}")'.format(arena.lower(), input['arena_name'])
     if enemy is False:
         return [jump, input['province_name'], '', '', '', '', '', provinceMap, roundNo, server, front]
