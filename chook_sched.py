@@ -101,7 +101,7 @@ while(True):
     provinces = requests.get('https://api.worldoftanks.asia/wot/globalmap/clanprovinces/?application_id=3d63d9368fc5eba8cc8955ca2a70624a&clan_id=2000011004&language=en&fields=landing_type%2C+arena_name%2C+province_name%2C+front_id%2C+prime_time')
     provinces = provinces.json()
     provinces = provinces['data']['2000011004']
-    #pp.pprint(battles)
+    pp.pprint(battles)
     battleList = []
     for battle in battles['battles']:
         battleList.append(prettyList(battle, True))
@@ -125,6 +125,7 @@ while(True):
     originalList.pop(0)
     #originalList.pop(0)
 
+# 12 col L 17 col Q 1 indexed
     finalList = []
     ticks = []
     firstLineFlag = False
@@ -133,6 +134,7 @@ while(True):
         if battle[0] != previousJump:
             if firstLineFlag is True:
                 finalList.append(['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''])
+                #finalList.append(['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',''])
             else:
                 firstLineFlag = True
             previousJump = battle[0]
@@ -140,6 +142,8 @@ while(True):
             if battle[0] == originalBattle[0] and battle[1] == originalBattle[1]:
                 ticks.append([originalBattle[11],originalBattle[12],originalBattle[13],originalBattle[14],originalBattle[15]])
                 battle.extend([originalBattle[11],originalBattle[12],originalBattle[13],originalBattle[14],originalBattle[15]])
+                #ticks.append([originalBattle[11],originalBattle[12],originalBattle[13],originalBattle[14],originalBattle[15],originalBattle[16]])
+                #battle.extend([originalBattle[11],originalBattle[12],originalBattle[13],originalBattle[14],originalBattle[15],originalBattle[16]])
                 finalList.append(battle)
                 chosenFlag = True
                 break
@@ -171,6 +175,7 @@ while(True):
     try:
         sheet.update('A1',updateString)
         work.update('A1',updateString)
+   #-     print ("meh")
     except:
         print("couldn't reach google API, trying again in 1m")
     previousTicks = ticks
